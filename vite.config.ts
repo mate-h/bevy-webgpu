@@ -1,9 +1,25 @@
 import { createLogger, defineConfig } from "vite";
 import { spawn } from "child_process";
 import path from "path";
+import fs from "fs";
 
 export default defineConfig({
   plugins: [
+    {
+      name: "copy-assets",
+      generateBundle() {
+        const files = fs.readdirSync("assets", { recursive: true });
+        for (const file of files) {
+          const p = "assets/" + file;
+          if (fs.statSync(p).isDirectory()) continue;
+          this.emitFile({
+            type: "asset",
+            fileName: p,
+            source: fs.readFileSync(p),
+          });
+        }
+      },
+    },
     {
       name: "wgsl-hmr",
       handleHotUpdate({ file, server }) {
