@@ -1,6 +1,6 @@
 # Bevy WebGPU
 
-Bevy WebGPU is a template repository for getting started with Bevy game engine for web game development using WebGPU. Efficient hot reloading of Rust and WGSL files with Vite dev server.
+Bevy WebGPU is a template repository for getting started with [Bevy game engine](https://bevyengine.org/) for web game development using WebGPU. Efficient hot reloading of Rust and WGSL files with Vite dev server.
 
 Demo: https://bevy-webgpu.vercel.app/
 
