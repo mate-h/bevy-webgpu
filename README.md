@@ -4,6 +4,15 @@ Bevy WebGPU is a template repository for getting started with Bevy game engine f
 
 Demo: https://bevy-webgpu.vercel.app/
 
+Quickstart:
+
+```bash
+pnpx degit mate-h/bevy-webgpu my-project
+cd my-project
+pnpm i
+pnpm run dev
+```
+
 Features:
 - WebGPU support with Bevy engine
 - TypeScript support with WASM bindings to Rust
