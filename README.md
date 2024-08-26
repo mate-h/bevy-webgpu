@@ -10,6 +10,7 @@ Quickstart:
 pnpx degit mate-h/bevy-webgpu my-project
 cd my-project
 pnpm i
+pnpm run build:wasm
 pnpm run dev
 ```
 
