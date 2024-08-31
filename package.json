@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm run build:wasm && tsc && vite build",
-    "build:wasm": "cargo build --profile release --target wasm32-unknown-unknown && wasm-bindgen --out-dir wasm --out-name main --target web target/wasm32-unknown-unknown/release/bevy-webgpu.wasm",
+    "build:wasm": "cargo build --profile release --features bevy/webgpu --target wasm32-unknown-unknown && wasm-bindgen --out-dir wasm --out-name main --target web target/wasm32-unknown-unknown/release/bevy-webgpu.wasm",
     "preview": "vite preview"
   },
   "devDependencies": {

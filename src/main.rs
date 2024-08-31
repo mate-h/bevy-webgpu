@@ -6,9 +6,11 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderRef},
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
-use lazy_static::lazy_static;
-use std::sync::Mutex;
 use wasm_bindgen::prelude::*;
+mod shader_reload;
+use shader_reload::ShaderReloadPlugin;
+mod compute;
+use compute::{ComputeShaderPlugin, ComputedTexture};
 
 #[wasm_bindgen]
 pub fn run() {
@@ -21,35 +23,11 @@ pub fn run() {
             MaterialPlugin::<CustomMaterial>::default(),
             PanOrbitCameraPlugin,
             FrameTimeDiagnosticsPlugin::default(),
+            ShaderReloadPlugin,
+            ComputeShaderPlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, check_for_shader_reload)
         .run();
-}
-
-lazy_static! {
-    static ref SHADER_RELOAD_TRIGGER: Mutex<Option<String>> = Mutex::new(None);
-}
-
-#[wasm_bindgen]
-pub fn reload_shader(ptr: *const u8, len: usize) {
-    let shader_path = unsafe {
-        std::str::from_utf8(std::slice::from_raw_parts(ptr, len)).expect("Invalid UTF-8")
-    };
-    let mut trigger = SHADER_RELOAD_TRIGGER.lock().unwrap();
-    *trigger = Some(shader_path.to_string());
-}
-
-fn should_reload_shader() -> Option<String> {
-    let mut trigger = SHADER_RELOAD_TRIGGER.lock().unwrap();
-    trigger.take()
-}
-
-fn check_for_shader_reload(world: &mut World) {
-    if let Some(shader_path) = should_reload_shader() {
-        let asset_server = world.resource::<AssetServer>();
-        asset_server.reload(&shader_path);
-    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -64,11 +42,14 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
+    mut computed_texture: ResMut<ComputedTexture>,
 ) {
     commands.spawn(MaterialMeshBundle {
         mesh: meshes.add(Cuboid::default()),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        material: materials.add(CustomMaterial {}),
+        material: materials.add(CustomMaterial {
+            computed_texture: computed_texture.texture.clone(),
+        }),
         ..default()
     });
 
@@ -82,7 +63,11 @@ fn setup(
 }
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-struct CustomMaterial {}
+struct CustomMaterial {
+    #[texture(1)]
+    #[sampler(2)]
+    computed_texture: Handle<Image>,
+}
 
 impl Material for CustomMaterial {
     fn fragment_shader() -> ShaderRef {
