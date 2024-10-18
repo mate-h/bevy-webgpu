@@ -17,7 +17,8 @@ pnpm run dev
 Features:
 - WebGPU support with Bevy engine
 - TypeScript support with WASM bindings to Rust
-- Hot reloading of Rust and WGSL files
+- Hot reloading of WGSL files
+- Recompiling Rust code with page refresh
 - Instant reloading of shaders without refreshing the page
 - Support for multiple examples
 - Easy to understand and modify template
@@ -35,6 +36,12 @@ No dependencies besides:
 Use rust-analyzer for Rust development, as well as wgsl-analyzer for WGSL linting. Fork of the wgsl-analyzer is available [here](https://github.com/mate-h/wgsl-analyzer). This fork includes support for Bevy shaders that use `#import` directives as opposed to `#include`.
 
 It is also recommended to use [Mise en place](https://mise.jdx.dev/getting-started.html) for installing the Rust toolchain and other dependencies.
+
+```bash
+mise use -g rust
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli
+```
 
 VSCode plugins:
 - [Rust Analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
