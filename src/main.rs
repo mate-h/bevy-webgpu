@@ -44,20 +44,17 @@ fn setup(
     mut materials: ResMut<Assets<CustomMaterial>>,
     mut computed_texture: ResMut<ComputedTexture>,
 ) {
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Cuboid::default()),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        material: materials.add(CustomMaterial {
+    commands.spawn((
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        Mesh3d(meshes.add(Cuboid::default())),
+        MeshMaterial3d(materials.add(CustomMaterial {
             computed_texture: computed_texture.texture.clone(),
-        }),
-        ..default()
-    });
+        })),
+    ));
 
     commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
-            ..default()
-        },
+        Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
+        Camera3d::default(),
         PanOrbitCamera::default(),
     ));
 }

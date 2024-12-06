@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
 use bevy::{
-    asset::AssetMetaCheck,
     prelude::*,
     render::{
         extract_resource::{ExtractResource, ExtractResourcePlugin},
@@ -20,6 +19,7 @@ const SIZE: (u32, u32) = (256, 256);
 const WORKGROUP_SIZE: u32 = 8;
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+    let initial_data = vec![0u8; (SIZE.0 * SIZE.1 * 16) as usize];
     let mut image = Image::new_fill(
         Extent3d {
             width: SIZE.0,
@@ -27,7 +27,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        &[0, 0, 0, 255],
+        &initial_data,
         TextureFormat::Rgba32Float,
         RenderAssetUsages::RENDER_WORLD,
     );
@@ -97,6 +97,7 @@ impl FromWorld for ComputeShaderPipeline {
             shader,
             shader_defs: vec![],
             entry_point: Cow::from("main"),
+            zero_initialize_workgroup_memory: false,
         });
 
         ComputeShaderPipeline {

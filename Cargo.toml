@@ -1,10 +1,10 @@
 [package]
 name = "bevy-webgpu"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-bevy = "0.14.2"
-bevy_panorbit_camera = "0.19.3"
+bevy = "0.15.0"
+bevy_panorbit_camera = { git = "https://github.com/dmlukichev/bevy_panorbit_camera", branch = "master" }
 lazy_static = "1.5.0"
-wasm-bindgen = "0.2.95"
+wasm-bindgen = "0.2.97"
