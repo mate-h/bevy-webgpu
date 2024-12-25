@@ -134,16 +134,13 @@ fn update_texture(
     render_queue: Res<RenderQueue>,
     pipeline_cache: Res<PipelineCache>,
 ) {
-    let Some(compute_pipeline) = pipeline_cache.get_compute_pipeline(pipeline.pipeline) else {
-        // Pipeline is not ready yet, skip this frame
-        return;
+    let compute_pipeline = match pipeline_cache.get_compute_pipeline(pipeline.pipeline) {
+        Some(pipeline) => pipeline,
+        None => return, // Pipeline not ready yet, skip this frame
     };
     let mut pass = render_device.create_command_encoder(&CommandEncoderDescriptor::default());
     {
         let mut compute_pass = pass.begin_compute_pass(&ComputePassDescriptor::default());
-        let compute_pipeline = pipeline_cache
-            .get_compute_pipeline(pipeline.pipeline)
-            .unwrap();
         compute_pass.set_pipeline(compute_pipeline);
         compute_pass.set_bind_group(0, &bind_group.0, &[]);
         compute_pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);

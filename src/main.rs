@@ -42,7 +42,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
-    mut computed_texture: ResMut<ComputedTexture>,
+    computed_texture: Res<ComputedTexture>,
 ) {
     commands.spawn((
         Transform::from_xyz(0.0, 0.0, 0.0),
