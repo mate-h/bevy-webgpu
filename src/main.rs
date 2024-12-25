@@ -11,6 +11,9 @@ mod shader_reload;
 use shader_reload::ShaderReloadPlugin;
 mod compute;
 use compute::{ComputeShaderPlugin, ComputedTexture};
+use bevy_egui::EguiPlugin;
+mod gui;
+use gui::GuiPlugin;
 
 #[wasm_bindgen]
 pub fn run() {
@@ -25,6 +28,8 @@ pub fn run() {
             FrameTimeDiagnosticsPlugin::default(),
             ShaderReloadPlugin,
             ComputeShaderPlugin,
+            EguiPlugin,
+            GuiPlugin,
         ))
         .add_systems(Startup, setup)
         .run();

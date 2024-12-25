@@ -22,9 +22,11 @@ Features:
 - Instant reloading of shaders without refreshing the page
 - Support for multiple examples
 - Easy to understand and modify template
+- Egui support for debugging
 
 No dependencies besides:
 - Bevy
+- Egui
 - Vite
 - Rust
 - Node
