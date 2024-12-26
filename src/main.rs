@@ -1,19 +1,22 @@
 use bevy::{
     asset::AssetMetaCheck,
+    core_pipeline::core_3d::Camera3dDepthTextureUsage,
     diagnostic::FrameTimeDiagnosticsPlugin,
     prelude::*,
     reflect::TypePath,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::render_resource::{AsBindGroup, ShaderRef, TextureUsages},
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use wasm_bindgen::prelude::*;
 mod shader_reload;
 use shader_reload::ShaderReloadPlugin;
 mod compute;
-use compute::{ComputeShaderPlugin, ComputedTexture};
 use bevy_egui::EguiPlugin;
+use compute::{ComputeShaderPlugin, ComputedTexture};
 mod gui;
 use gui::GuiPlugin;
+mod post_process;
+use post_process::{PostProcessPlugin, PostProcessSettings};
 
 #[wasm_bindgen]
 pub fn run() {
@@ -30,6 +33,7 @@ pub fn run() {
             ComputeShaderPlugin,
             EguiPlugin,
             GuiPlugin,
+            PostProcessPlugin,
         ))
         .add_systems(Startup, setup)
         .run();
@@ -59,8 +63,14 @@ fn setup(
 
     commands.spawn((
         Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
-        Camera3d::default(),
+        Camera3d {
+            depth_texture_usages: Camera3dDepthTextureUsage::from(
+                TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
+            ),
+            ..default()
+        },
         PanOrbitCamera::default(),
+        PostProcessSettings::default(),
     ));
 }
 

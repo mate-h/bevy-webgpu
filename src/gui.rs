@@ -1,4 +1,5 @@
 use crate::compute::ComputeShaderSettings;
+use crate::post_process::PostProcessSettings;
 use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     input::mouse::MouseMotion,
@@ -56,6 +57,7 @@ fn ui_system(
     diagnostics: Res<DiagnosticsStore>,
     mut camera_query: Query<&mut PanOrbitCamera>,
     mut shader_settings: Query<&mut ComputeShaderSettings>,
+    mut post_process_settings: Query<&mut PostProcessSettings>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -101,6 +103,7 @@ fn ui_system(
             }
 
             ui.separator();
+            // Luts
             ui.add(
                 egui::Slider::new(
                     &mut shader_settings.get_single_mut().unwrap().value,
@@ -108,6 +111,15 @@ fn ui_system(
                 )
                 .text("Value"),
             );
+
+            // Post process
+            ui.separator();
+            if let Ok(mut settings) = post_process_settings.get_single_mut() {
+                let mut show = settings.show_depth != 0.0;
+                if ui.checkbox(&mut show, "Show Depth").clicked() {
+                    settings.show_depth = show as u32 as f32;
+                }
+            }
         });
 }
 
