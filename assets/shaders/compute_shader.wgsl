@@ -1,9 +1,11 @@
 #import bevy_render::globals::Globals;
 
 @group(0) @binding(0) var<uniform> globals: Globals;
-
-@group(0) @binding(1)
-var texture: texture_storage_2d<rgba32float, write>;
+@group(0) @binding(1) var texture: texture_storage_2d<rgba32float, write>;
+struct ComputeShaderSettings {
+    value: f32,
+}
+@group(0) @binding(2) var<uniform> settings: ComputeShaderSettings;
 
 fn oklab_to_linear_srgb(c: vec3<f32>) -> vec3<f32> {
     let L = c.x;
@@ -38,7 +40,7 @@ fn get_color(uv: vec2<f32>) -> vec4<f32> {
     let green = vec3<f32>(0.86644, -0.233887, 0.179498);
     let blue = vec3<f32>(0.701674, 0.274566, -0.169156);
     let white = vec3<f32>(1.0, 0.0, 0.0);
-    let mixed = mix(mix(red, blue, t_1), mix(green, white, t_2), distance_to_center);
+    let mixed = mix(mix(red, blue, t_1), mix(green, white, t_2), distance_to_center * settings.value);
 
     return vec4<f32>(oklab_to_linear_srgb(mixed), 1.0);
 }

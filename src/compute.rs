@@ -1,22 +1,33 @@
 use std::borrow::Cow;
 
 use bevy::{
+    log,
     prelude::*,
     render::{
+        extract_component::{
+            ComponentUniforms, ExtractComponent, ExtractComponentPlugin, UniformComponentPlugin,
+        },
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         globals::{GlobalsBuffer, GlobalsUniform},
         render_asset::{RenderAssetUsages, RenderAssets},
+        render_graph::{self, RenderGraph, RenderLabel},
         render_resource::*,
-        renderer::{RenderDevice, RenderQueue},
+        renderer::{RenderContext, RenderDevice},
         texture::GpuImage,
-        Render, RenderApp, RenderSet,
+        RenderApp,
     },
 };
+
 use binding_types::{texture_storage_2d, uniform_buffer};
 
 const SHADER_ASSET_PATH: &str = "shaders/compute_shader.wgsl";
 const SIZE: (u32, u32) = (256, 256);
 const WORKGROUP_SIZE: u32 = 8;
+
+#[derive(Component, Default, Clone, Copy, ExtractComponent, ShaderType)]
+pub struct ComputeShaderSettings {
+    pub value: f32,
+}
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let initial_data = vec![0u8; (SIZE.0 * SIZE.1 * 16) as usize];
@@ -37,6 +48,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     commands.insert_resource(ComputedTexture {
         texture: image_handle,
     });
+    commands.spawn(ComputeShaderSettings { value: 1.0 });
 }
 
 #[derive(Resource, Clone, ExtractResource)]
@@ -46,18 +58,23 @@ pub struct ComputedTexture {
 
 pub struct ComputeShaderPlugin;
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, RenderLabel)]
+struct ComputeShaderLabel;
+
 impl Plugin for ComputeShaderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, setup)
-            .add_plugins(ExtractResourcePlugin::<ComputedTexture>::default());
+        app.add_systems(PreStartup, setup).add_plugins((
+            ExtractResourcePlugin::<ComputedTexture>::default(),
+            ExtractComponentPlugin::<ComputeShaderSettings>::default(),
+            UniformComponentPlugin::<ComputeShaderSettings>::default(),
+        ));
+
         let render_app = app.sub_app_mut(RenderApp);
-        render_app.add_systems(
-            Render,
-            (
-                prepare_bind_group.in_set(RenderSet::PrepareBindGroups),
-                update_texture.after(prepare_bind_group),
-            ),
-        );
+
+        // Add node to render graph
+        let mut render_graph = render_app.world_mut().resource_mut::<RenderGraph>();
+        render_graph.add_node(ComputeShaderLabel, ComputeNode::default());
+        render_graph.add_node_edge(ComputeShaderLabel, bevy::render::graph::CameraDriverLabel);
     }
 
     fn finish(&self, app: &mut App) {
@@ -77,12 +94,13 @@ impl FromWorld for ComputeShaderPipeline {
         let render_device = world.resource::<RenderDevice>();
 
         let bind_group_layout = render_device.create_bind_group_layout(
-            "simple_bind_group_layout",
+            "compute_shader_bind_group_layout",
             &BindGroupLayoutEntries::sequential(
                 ShaderStages::COMPUTE,
                 (
                     uniform_buffer::<GlobalsUniform>(false),
                     texture_storage_2d(TextureFormat::Rgba32Float, StorageTextureAccess::WriteOnly),
+                    uniform_buffer::<ComputeShaderSettings>(true),
                 ),
             ),
         );
@@ -107,43 +125,86 @@ impl FromWorld for ComputeShaderPipeline {
     }
 }
 
-#[derive(Resource)]
-struct ComputeBindGroup(BindGroup);
-
-fn prepare_bind_group(
-    mut commands: Commands,
-    pipeline: Res<ComputeShaderPipeline>,
-    gpu_images: Res<RenderAssets<GpuImage>>,
-    computed_texture: Res<ComputedTexture>,
-    render_device: Res<RenderDevice>,
-    globals_buffer: Res<GlobalsBuffer>,
-) {
-    let view = &gpu_images.get(&computed_texture.texture).unwrap();
-    let bind_group = render_device.create_bind_group(
-        "simple_bind_group",
-        &pipeline.bind_group_layout,
-        &BindGroupEntries::sequential((&globals_buffer.buffer, &view.texture_view)),
-    );
-    commands.insert_resource(ComputeBindGroup(bind_group));
+enum ComputeState {
+    Loading,
+    Ready,
 }
 
-fn update_texture(
-    pipeline: Res<ComputeShaderPipeline>,
-    bind_group: Res<ComputeBindGroup>,
-    render_device: Res<RenderDevice>,
-    render_queue: Res<RenderQueue>,
-    pipeline_cache: Res<PipelineCache>,
-) {
-    let compute_pipeline = match pipeline_cache.get_compute_pipeline(pipeline.pipeline) {
-        Some(pipeline) => pipeline,
-        None => return, // Pipeline not ready yet, skip this frame
-    };
-    let mut pass = render_device.create_command_encoder(&CommandEncoderDescriptor::default());
-    {
-        let mut compute_pass = pass.begin_compute_pass(&ComputePassDescriptor::default());
-        compute_pass.set_pipeline(compute_pipeline);
-        compute_pass.set_bind_group(0, &bind_group.0, &[]);
-        compute_pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+struct ComputeNode {
+    state: ComputeState,
+}
+
+impl Default for ComputeNode {
+    fn default() -> Self {
+        Self {
+            state: ComputeState::Loading,
+        }
     }
-    render_queue.submit(std::iter::once(pass.finish()));
+}
+
+impl render_graph::Node for ComputeNode {
+    fn update(&mut self, world: &mut World) {
+        let pipeline = world.resource::<ComputeShaderPipeline>();
+        let pipeline_cache = world.resource::<PipelineCache>();
+
+        match self.state {
+            ComputeState::Loading => {
+                if let CachedPipelineState::Ok(_) =
+                    pipeline_cache.get_compute_pipeline_state(pipeline.pipeline)
+                {
+                    self.state = ComputeState::Ready;
+                }
+            }
+            ComputeState::Ready => {}
+        }
+    }
+
+    fn run(
+        &self,
+        _graph: &mut render_graph::RenderGraphContext,
+        render_context: &mut RenderContext,
+        world: &World,
+    ) -> Result<(), render_graph::NodeRunError> {
+        if let ComputeState::Ready = self.state {
+            let pipeline = world.resource::<ComputeShaderPipeline>();
+            let pipeline_cache = world.resource::<PipelineCache>();
+
+            // Bind group setup
+            let gpu_images = world.resource::<RenderAssets<GpuImage>>();
+            let computed_texture = world.resource::<ComputedTexture>();
+            let globals_buffer = world.resource::<GlobalsBuffer>();
+            let settings_uniforms = world.resource::<ComponentUniforms<ComputeShaderSettings>>();
+            let Some(settings_binding) = settings_uniforms.binding() else {
+                return Ok(());
+            };
+
+            let Some(view) = gpu_images.get(&computed_texture.texture) else {
+                log::error!("Computed texture not found");
+                return Ok(());
+            };
+
+            let bind_group = render_context.render_device().create_bind_group(
+                "compute_shader_bind_group",
+                &pipeline.bind_group_layout,
+                &BindGroupEntries::sequential((
+                    &globals_buffer.buffer,
+                    &view.texture_view,
+                    settings_binding.clone(),
+                )),
+            );
+
+            let compute_pipeline = pipeline_cache
+                .get_compute_pipeline(pipeline.pipeline)
+                .unwrap();
+
+            let mut pass = render_context
+                .command_encoder()
+                .begin_compute_pass(&ComputePassDescriptor::default());
+
+            pass.set_pipeline(compute_pipeline);
+            pass.set_bind_group(0, &bind_group, &[0]);
+            pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+        }
+        Ok(())
+    }
 }
