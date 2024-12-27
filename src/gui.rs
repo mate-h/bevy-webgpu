@@ -5,6 +5,7 @@ use bevy::{
     input::mouse::MouseMotion,
     prelude::*,
 };
+use bevy_debug_grid::Grid;
 use bevy_egui::{egui, EguiContexts, EguiSet};
 use bevy_panorbit_camera::PanOrbitCamera;
 
@@ -58,6 +59,7 @@ fn ui_system(
     mut camera_query: Query<&mut PanOrbitCamera>,
     mut shader_settings: Query<&mut ComputeShaderSettings>,
     mut post_process_settings: Query<&mut PostProcessSettings>,
+    mut grid_query: Query<&mut Visibility, With<Grid>>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -70,20 +72,6 @@ fn ui_system(
                     ui.label(format!("FPS: {:.1}", fps_value));
                 }
             }
-
-            ui.horizontal(|ui| {
-                if ui.button("Reset Camera").clicked() {
-                    if let Ok(mut camera) = camera_query.get_single_mut() {
-                        *camera = PanOrbitCamera {
-                            focus: Vec3::ZERO,
-                            radius: Some(5.0),
-                            yaw: Some(0.0),
-                            pitch: Some(std::f32::consts::PI * 0.1),
-                            ..Default::default()
-                        };
-                    }
-                }
-            });
 
             if let Ok(camera) = camera_query.get_single() {
                 ui.separator();
@@ -102,7 +90,32 @@ fn ui_system(
                 ));
             }
 
+            ui.horizontal(|ui| {
+                if ui.button("Reset Camera").clicked() {
+                    if let Ok(mut camera) = camera_query.get_single_mut() {
+                        *camera = PanOrbitCamera {
+                            focus: Vec3::ZERO,
+                            radius: Some(5.0),
+                            yaw: Some(0.0),
+                            pitch: Some(std::f32::consts::PI * 0.1),
+                            ..Default::default()
+                        };
+                    }
+                }
+            });
+
             ui.separator();
+            if let Ok(mut grid_visibility) = grid_query.get_single_mut() {
+                let mut show_grid = *grid_visibility == Visibility::Visible;
+                if ui.checkbox(&mut show_grid, "Show Grid").clicked() {
+                    *grid_visibility = if show_grid {
+                        Visibility::Visible
+                    } else {
+                        Visibility::Hidden
+                    };
+                }
+            }
+
             // Luts
             ui.add(
                 egui::Slider::new(
@@ -113,7 +126,6 @@ fn ui_system(
             );
 
             // Post process
-            ui.separator();
             if let Ok(mut settings) = post_process_settings.get_single_mut() {
                 let mut show = settings.show_depth != 0.0;
                 if ui.checkbox(&mut show, "Show Depth").clicked() {

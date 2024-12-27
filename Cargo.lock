@@ -347,6 +347,7 @@ name = "bevy-webgpu"
 version = "0.3.0"
 dependencies = [
  "bevy",
+ "bevy_debug_grid",
  "bevy_egui",
  "bevy_panorbit_camera",
  "lazy_static",
@@ -539,6 +540,14 @@ dependencies = [
  "radsort",
  "serde",
  "smallvec",
+]
+
+[[package]]
+name = "bevy_debug_grid"
+version = "0.7.0"
+source = "git+https://github.com/mate-h/bevy_debug_grid#e57c2d44680ad29a2337b1da11266159d665d4b1"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
