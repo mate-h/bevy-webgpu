@@ -545,7 +545,7 @@ dependencies = [
 [[package]]
 name = "bevy_debug_grid"
 version = "0.7.0"
-source = "git+https://github.com/mate-h/bevy_debug_grid#e57c2d44680ad29a2337b1da11266159d665d4b1"
+source = "git+https://github.com/mate-h/bevy_debug_grid?branch=master#35a733839970b77e271710426b8fe150471534cc"
 dependencies = [
  "bevy",
 ]

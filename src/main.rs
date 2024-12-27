@@ -5,7 +5,6 @@ use bevy::{
     prelude::*,
     reflect::TypePath,
     render::render_resource::{AsBindGroup, ShaderRef, TextureUsages},
-    render::view::Visibility,
 };
 use bevy_debug_grid::*;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
@@ -28,7 +27,7 @@ pub fn run() {
                 meta_check: AssetMetaCheck::Never,
                 ..Default::default()
             }),
-            DebugGridPlugin::without_floor_grid(), 
+            DebugGridPlugin::with_floor_grid(),
             MaterialPlugin::<CustomMaterial>::default(),
             PanOrbitCameraPlugin,
             FrameTimeDiagnosticsPlugin::default(),
@@ -56,19 +55,6 @@ fn setup(
     mut materials: ResMut<Assets<CustomMaterial>>,
     computed_texture: Res<ComputedTexture>,
 ) {
-    // Floor grid
-    commands.spawn((
-        Grid {
-            spacing: 10.0_f32,
-            count: 16,
-            ..default()
-        },
-        SubGrid::default(),
-        GridAxis::new_rgb(),
-        Transform::default(),
-        Visibility::Visible,
-    ));
-    
     commands.spawn((
         Transform::from_xyz(0.0, 0.0, 0.0),
         Mesh3d(meshes.add(Cuboid::default())),
