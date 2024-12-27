@@ -106,7 +106,7 @@ fn ui_system(
 
             ui.separator();
             if let Ok(mut grid_visibility) = grid_query.get_single_mut() {
-                let mut show_grid = *grid_visibility == Visibility::Visible;
+                let mut show_grid = *grid_visibility != Visibility::Hidden;
                 if ui.checkbox(&mut show_grid, "Show Grid").clicked() {
                     *grid_visibility = if show_grid {
                         Visibility::Visible
