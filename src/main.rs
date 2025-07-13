@@ -15,7 +15,7 @@ mod compute;
 use bevy_egui::EguiPlugin;
 use compute::{ComputeShaderPlugin, ComputedTexture};
 mod gui;
-use gui::GuiPlugin;
+use gui::GuiAppPlugin;
 mod post_process;
 use post_process::{PostProcessPlugin, PostProcessSettings};
 
@@ -33,8 +33,8 @@ pub fn run() {
             FrameTimeDiagnosticsPlugin::default(),
             ShaderReloadPlugin,
             ComputeShaderPlugin,
-            EguiPlugin,
-            GuiPlugin,
+            EguiPlugin::default(),
+            GuiAppPlugin,
             PostProcessPlugin,
         ))
         .add_systems(Startup, setup)
