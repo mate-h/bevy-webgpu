@@ -34,11 +34,9 @@ No dependencies besides:
 - WASM
 - WebGPU 
 
-## Recommended setup
+## Initial setup
 
-Use rust-analyzer for Rust development, as well as wgsl-analyzer for WGSL linting. Fork of the wgsl-analyzer is available [here](https://github.com/mate-h/wgsl-analyzer). This fork includes support for Bevy shaders that use `#import` directives as opposed to `#include`.
-
-It is also recommended to use [Mise en place](https://mise.jdx.dev/getting-started.html) for installing the Rust toolchain and other dependencies.
+Use rust-analyzer for Rust development, as well as shader-analyzer for WGSL linting. It is also recommended to use [Mise en place](https://mise.jdx.dev/getting-started.html) for installing the Rust toolchain and other dependencies.
 
 ```bash
 mise use -g rust
@@ -48,7 +46,7 @@ cargo install wasm-opt --locked
 pnpm i
 ```
 
-Production builds (`pnpm run build`) use a `wasm-release` Cargo profile (`opt-level = "z"`, LTO, strip) and run `wasm-opt -Oz` to shrink the WASM binary. Dev rebuilds keep the faster `release` profile.
+Production builds with the `pnpm run build` command use a `wasm-release` Cargo profile and run `wasm-opt` to shrink the WASM binary. Dev rebuilds keep the faster `release` profile.
 
 VSCode plugins:
 - [Rust Analyzer](https://open-vsx.org/extension/rust-lang/rust-analyzer)
