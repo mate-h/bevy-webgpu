@@ -7,7 +7,7 @@ use bevy::{
     input::mouse::MouseMotion,
     prelude::*,
 };
-use bevy_egui::{egui, EguiContexts, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass, egui};
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraSystemSet};
 
 #[derive(Resource, Default)]

@@ -5,6 +5,7 @@ use bevy::{
     core_pipeline::schedule::camera_driver,
     prelude::*,
     render::{
+        Render, RenderApp, RenderStartup, RenderSystems,
         extract_component::{
             ComponentUniforms, DynamicUniformIndex, ExtractComponent, ExtractComponentPlugin,
             UniformComponentPlugin,
@@ -18,7 +19,6 @@ use bevy::{
         },
         renderer::{RenderContext, RenderDevice, RenderGraph},
         texture::GpuImage,
-        Render, RenderApp, RenderStartup, RenderSystems,
     },
     shader::ShaderCacheError,
 };
