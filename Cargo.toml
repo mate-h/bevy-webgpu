@@ -4,9 +4,18 @@ version = "0.4.0"
 edition = "2024"
 
 [dependencies]
-bevy = "0.16.1"
-bevy_panorbit_camera = "0.27.0"
+bevy = { version = "0.19", features = ["bevy_dev_tools"] }
+bevy_panorbit_camera = "0.35"
 lazy_static = "1.5.0"
 wasm-bindgen = "0.2.100"
-bevy_egui = "0.35.1"
-bevy_debug_grid = "0.7.0"
+bevy_egui = "0.41"
+
+# Size-oriented profile for production WASM (used by `pnpm run build`).
+# Keep `release` for Vite/dev rebuilds so iteration stays fast.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

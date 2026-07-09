@@ -1,5 +1,5 @@
 import "./index.css";
-import init, { InitOutput } from "../wasm/main";
+import init, { InitOutput, reload_shader } from "../wasm/main";
 let engine: InitOutput;
 
 async function main() {
@@ -35,13 +35,6 @@ main();
 if (import.meta.hot) {
   import.meta.hot.on("wgsl-update", async ({ file }) => {
     console.log(`[wgsl-hmr] ${file}`);
-    const encoder = new TextEncoder();
-    const fileBuffer = encoder.encode(file);
-    const len = fileBuffer.length;
-    const alignment = 1;
-    const ptr = engine.__wbindgen_malloc(len, 1);
-    new Uint8Array(engine.memory.buffer).set(fileBuffer, ptr);
-    engine.reload_shader(ptr, len);
-    engine.__wbindgen_free(ptr, len, alignment);
+    reload_shader(file);
   });
 }

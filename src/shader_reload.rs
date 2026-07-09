@@ -8,10 +8,7 @@ lazy_static! {
 }
 
 #[wasm_bindgen]
-pub fn reload_shader(ptr: *const u8, len: usize) {
-  let shader_path = unsafe {
-      std::str::from_utf8(std::slice::from_raw_parts(ptr, len)).expect("Invalid UTF-8")
-  };
+pub fn reload_shader(shader_path: &str) {
   let mut trigger = SHADER_RELOAD_TRIGGER.lock().unwrap();
   *trigger = Some(shader_path.to_string());
 }

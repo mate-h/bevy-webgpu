@@ -15,7 +15,7 @@ pnpm run dev
 ```
 
 Features:
-- WebGPU support with Bevy version 0.15 engine
+- WebGPU support with Bevy version 0.19 engine
 - TypeScript support with WASM bindings to Rust
 - Hot reloading of WGSL files
 - Recompiling Rust code with page refresh
@@ -23,6 +23,7 @@ Features:
 - Support for multiple examples
 - Easy to understand and modify template
 - Egui support for debugging
+- Built-in infinite debug grid via Bevy's `InfiniteGrid`
 
 No dependencies besides:
 - Bevy
@@ -43,33 +44,12 @@ It is also recommended to use [Mise en place](https://mise.jdx.dev/getting-start
 mise use -g rust
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli
+cargo install wasm-opt --locked
+pnpm i
 ```
+
+Production builds (`pnpm run build`) use a `wasm-release` Cargo profile (`opt-level = "z"`, LTO, strip) and run `wasm-opt -Oz` to shrink the WASM binary. Dev rebuilds keep the faster `release` profile.
 
 VSCode plugins:
-- [Rust Analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-- [WGSL Analyzer](https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer)
-
-In order to properly lint Bevy shaders, you need to add the following VSCode configuration.
-This is described in [this issue](https://github.com/bevyengine/bevy/issues/5561).
-
-VSCode configuration:
-```jsonc
-{
-  "rust-analyzer.server.path": "~/.local/share/mise/installs/rust/latest/bin/rust-analyzer",
-  "rust-analyzer.server.extraEnv": {
-    "RUSTUP_TOOLCHAIN": "stable"
-  },
-  "wgsl-analyzer.server.path": "/your/path/to/wgsl-analyzer/target/release/wgsl_analyzer",
-  "wgsl-analyzer.customImports": {
-    "bevy_pbr::mesh_view_bindings": "file:///path/to/bevy/crates/bevy_pbr/src/mesh_view_bindings.wgsl",
-    // Add more imports here. To obtain the full list, see the linked GitHub issue.
-  },
-  "wgsl-analyzer.preprocessor.shaderDefs": [
-    "VERTEX_UVS",
-    "VERTEX_TANGENTS",
-    "VERTEX_COLORS",
-    "SKINNED",
-    "STANDARDMATERIAL_NORMAL_MAP",
-  ],
-}
-```
+- [Rust Analyzer](https://open-vsx.org/extension/rust-lang/rust-analyzer)
+- [Shader Validator](https://open-vsx.org/extension/antaalt/shader-validator)
