@@ -1,23 +1,26 @@
 use bevy::{
     asset::AssetMetaCheck,
-    core_pipeline::core_3d::Camera3dDepthTextureUsage,
+    camera::Camera3dDepthTextureUsage,
+    dev_tools::infinite_grid::{InfiniteGrid, InfiniteGridPlugin, InfiniteGridSettings},
     diagnostic::FrameTimeDiagnosticsPlugin,
     prelude::*,
     reflect::TypePath,
-    render::render_resource::{AsBindGroup, ShaderRef, TextureUsages},
+    render::render_resource::{AsBindGroup, TextureUsages},
+    shader::ShaderRef,
 };
-use bevy_debug_grid::*;
+use bevy_egui::EguiPlugin;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use wasm_bindgen::prelude::*;
-mod shader_reload;
-use shader_reload::ShaderReloadPlugin;
+
 mod compute;
-use bevy_egui::EguiPlugin;
-use compute::{ComputeShaderPlugin, ComputedTexture};
 mod gui;
-use gui::GuiAppPlugin;
 mod post_process;
+mod shader_reload;
+
+use compute::{ComputeShaderPlugin, ComputedTexture};
+use gui::GuiAppPlugin;
 use post_process::{PostProcessPlugin, PostProcessSettings};
+use shader_reload::ShaderReloadPlugin;
 
 #[wasm_bindgen]
 pub fn run() {
@@ -27,7 +30,7 @@ pub fn run() {
                 meta_check: AssetMetaCheck::Never,
                 ..Default::default()
             }),
-            DebugGridPlugin::with_floor_grid(),
+            InfiniteGridPlugin,
             MaterialPlugin::<CustomMaterial>::default(),
             PanOrbitCameraPlugin,
             FrameTimeDiagnosticsPlugin::default(),
@@ -55,6 +58,14 @@ fn setup(
     mut materials: ResMut<Assets<CustomMaterial>>,
     computed_texture: Res<ComputedTexture>,
 ) {
+    commands.spawn((
+        InfiniteGrid,
+        InfiniteGridSettings {
+            fadeout_distance: 100.0,
+            ..default()
+        },
+    ));
+
     commands.spawn((
         Transform::from_xyz(0.0, 0.0, 0.0),
         Mesh3d(meshes.add(Cuboid::default())),

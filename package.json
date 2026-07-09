@@ -7,12 +7,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "pnpm run build:wasm && tsc && vite build",
+    "build": "pnpm run build:wasm:release && tsc && vite build",
     "build:wasm": "cargo build --profile release --features bevy/webgpu --target wasm32-unknown-unknown && wasm-bindgen --out-dir wasm --out-name main --target web target/wasm32-unknown-unknown/release/bevy-webgpu.wasm",
+    "build:wasm:release": "cargo build --profile wasm-release --features bevy/webgpu --target wasm32-unknown-unknown && wasm-bindgen --out-dir wasm --out-name main --target web target/wasm32-unknown-unknown/wasm-release/bevy-webgpu.wasm && wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals -o wasm/main_bg.wasm wasm/main_bg.wasm",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "vite": "^7.0.4"
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.4"
   }
 }

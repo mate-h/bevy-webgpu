@@ -1,13 +1,14 @@
 use crate::compute::ComputeShaderSettings;
 use crate::post_process::PostProcessSettings;
 use bevy::{
+    dev_tools::infinite_grid::{InfiniteGrid, InfiniteGridSettings},
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
+    ecs::message::MessageReader,
     input::mouse::MouseMotion,
     prelude::*,
 };
-use bevy_debug_grid::Grid;
 use bevy_egui::{EguiContexts, EguiPrimaryContextPass, egui};
-use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraSystemSet};
 
 #[derive(Resource, Default)]
 pub struct EguiInteractionState {
@@ -15,9 +16,6 @@ pub struct EguiInteractionState {
     pub is_dragging: bool,
     pub camera_interaction_active: bool,
 }
-
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-pub struct PanOrbitCameraSystemSet;
 
 pub struct GuiAppPlugin;
 
@@ -37,19 +35,16 @@ fn check_egui_wants_focus(mut state: ResMut<EguiInteractionState>, mut contexts:
     if let Ok(ctx) = contexts.ctx_mut() {
         let pointer_state = ctx.input(|i| i.pointer.clone());
 
-        // Start dragging when mouse is pressed over egui
-        if ctx.is_pointer_over_area() && pointer_state.any_pressed() {
+        if ctx.is_pointer_over_egui() && pointer_state.any_pressed() {
             state.is_dragging = true;
         }
 
-        // Stop dragging when mouse is released
         if !pointer_state.any_down() {
             state.is_dragging = false;
         }
 
-        // Update wants_focus based on dragging state
         state.wants_focus =
-            state.is_dragging || (ctx.is_pointer_over_area() && !state.camera_interaction_active);
+            state.is_dragging || (ctx.is_pointer_over_egui() && !state.camera_interaction_active);
     }
 }
 
@@ -59,7 +54,7 @@ fn ui_system(
     mut camera_query: Query<&mut PanOrbitCamera>,
     mut shader_settings: Query<&mut ComputeShaderSettings>,
     mut post_process_settings: Query<&mut PostProcessSettings>,
-    mut grid_query: Query<&mut Visibility, With<Grid>>,
+    mut grid_query: Query<&mut InfiniteGridSettings, With<InfiniteGrid>>,
 ) {
     if let Ok(ctx) = contexts.ctx_mut() {
         let ctx_ref: &egui::Context = &*ctx;
@@ -106,23 +101,17 @@ fn ui_system(
                 });
 
                 ui.separator();
-                if let Ok(mut grid_visibility) = grid_query.single_mut() {
-                    let mut show_grid = *grid_visibility != Visibility::Hidden;
+                if let Ok(mut grid_settings) = grid_query.single_mut() {
+                    let mut show_grid = grid_settings.fadeout_distance > 0.0;
                     if ui.checkbox(&mut show_grid, "Show Grid").clicked() {
-                        *grid_visibility = if show_grid {
-                            Visibility::Visible
-                        } else {
-                            Visibility::Hidden
-                        };
+                        grid_settings.fadeout_distance = if show_grid { 100.0 } else { 0.0 };
                     }
                 }
 
-                // Luts
                 if let Ok(mut shader) = shader_settings.single_mut() {
                     ui.add(egui::Slider::new(&mut shader.value, 0.0..=1.0).text("Value"));
                 }
 
-                // Post process
                 if let Ok(mut settings) = post_process_settings.single_mut() {
                     let mut show = settings.show_depth != 0.0;
                     if ui.checkbox(&mut show, "Show Depth").clicked() {
@@ -135,16 +124,14 @@ fn ui_system(
 
 fn handle_camera_block(
     mut state: ResMut<EguiInteractionState>,
-    mut mouse_motion: EventReader<MouseMotion>,
+    mut mouse_motion: MessageReader<MouseMotion>,
     mut camera_query: Query<&mut PanOrbitCamera>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    // Check if camera interaction is starting
     if mouse_buttons.just_pressed(MouseButton::Left) && !state.wants_focus {
         state.camera_interaction_active = true;
     }
 
-    // Check if camera interaction is ending
     if mouse_buttons.just_released(MouseButton::Left) {
         state.camera_interaction_active = false;
     }
